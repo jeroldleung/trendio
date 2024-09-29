@@ -5,24 +5,23 @@ from openai import OpenAI
 
 st.title("Trendio")
 
-conversations = {}
-
-if "conversations" not in st.session_state:
-    st.session_state["conversations"] = []
-
-if "current_conv" not in st.session_state:
-    st.session_state["current_conv"] = ""
-
+if "convs" not in st.session_state:
+    st.session_state["convs"] = {}
+if "cur_conv" not in st.session_state:
+    st.session_state["cur_conv"] = ""
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
+
+for msg in st.session_state.messages:
+    st.chat_message(msg["role"], avatar=msg["avatar"]).write(msg["content"])
 
 if prompt := st.chat_input("Say something"):
     url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     client = OpenAI(api_key=os.getenv("DASHSCOPE_API_KEY"), base_url=url)
 
     if not st.session_state.messages:
-        st.session_state.current_conv = prompt
-        st.session_state.conversations.append(prompt)
+        st.session_state.cur_conv = prompt
+        st.session_state.convs[prompt] = []
 
     st.chat_message("user", avatar=":material/face:").write(prompt)
     st.session_state.messages.append(
@@ -50,30 +49,42 @@ if prompt := st.chat_input("Say something"):
     )
 
 
-def save_conversation():
+def new_conv():
     if st.session_state.messages:
-        conversations[st.session_state.current_conv] = st.session_state.messages
-        st.session_state["messages"] = []
+        st.session_state.convs[st.session_state.cur_conv] = (
+            st.session_state.messages
+        )
+    st.session_state["messages"] = []
 
 
-def select_conversation():
-    save_conversation()
-    st.session_state.messages = conversations[st.session_state.current_conv]
+def load_conv():
+    if st.session_state.messages:
+        st.session_state.convs[st.session_state.cur_conv] = (
+            st.session_state.messages
+        )
+    st.session_state["messages"] = st.session_state.convs[
+        st.session_state.selection
+    ]
+    st.session_state["cur_conv"] = st.session_state.selection
 
 
-st.sidebar.button(
-    "New Conversation",
-    on_click=save_conversation,
-    type="primary",
-    use_container_width=True,
-)
-
-st.sidebar.header("Chat History")
-
-st.session_state.current_conv = st.sidebar.selectbox(
-    "conversation",
-    st.session_state.conversations,
-    label_visibility="collapsed",
-    index=len(st.session_state.conversations) - 1,
-    on_change=select_conversation,
-)
+with st.sidebar:
+    st.header("Conversations")
+    st.button(
+        "New Conversation",
+        on_click=new_conv,
+        type="primary",
+        use_container_width=True,
+    )
+    st.sidebar.selectbox(
+        "conversation",
+        st.session_state.convs.keys(),
+        label_visibility="collapsed",
+        index=(
+            list(st.session_state.convs).index(st.session_state.cur_conv)
+            if len(st.session_state.convs) > 0
+            else 0
+        ),
+        key="selection",
+        on_change=load_conv,
+    )
