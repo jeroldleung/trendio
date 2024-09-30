@@ -25,56 +25,36 @@ if prompt := st.chat_input("Say something"):
 
     st.chat_message("user", avatar=":material/face:").write(prompt)
     st.session_state.messages.append(
-        {
-            "role": "user",
-            "avatar": ":material/face:",
-            "content": prompt,
-        },
+        {"role": "user", "avatar": ":material/face:", "content": prompt}
     )
-
     stream = client.chat.completions.create(
         model="qwen-turbo", messages=st.session_state.messages, stream=True
     )
-
-    response = st.chat_message(
-        "assistant", avatar=":material/smart_toy:"
-    ).write_stream(stream)
-
+    response = st.chat_message("assistant", avatar=":material/smart_toy:").write_stream(
+        stream
+    )
     st.session_state.messages.append(
-        {
-            "role": "assistant",
-            "avatar": ":material/smart_toy:",
-            "content": response,
-        }
+        {"role": "assistant", "avatar": ":material/smart_toy:", "content": response}
     )
 
 
 def new_conv():
     if st.session_state.messages:
-        st.session_state.convs[st.session_state.cur_conv] = (
-            st.session_state.messages
-        )
+        st.session_state.convs[st.session_state.cur_conv] = st.session_state.messages
     st.session_state["messages"] = []
 
 
 def load_conv():
     if st.session_state.messages:
-        st.session_state.convs[st.session_state.cur_conv] = (
-            st.session_state.messages
-        )
-    st.session_state["messages"] = st.session_state.convs[
-        st.session_state.selection
-    ]
+        st.session_state.convs[st.session_state.cur_conv] = st.session_state.messages
+    st.session_state["messages"] = st.session_state.convs[st.session_state.selection]
     st.session_state["cur_conv"] = st.session_state.selection
 
 
 with st.sidebar:
     st.header("Conversations")
     st.button(
-        "New Conversation",
-        on_click=new_conv,
-        type="primary",
-        use_container_width=True,
+        "New Conversation", on_click=new_conv, type="primary", use_container_width=True
     )
     st.sidebar.selectbox(
         "conversation",
