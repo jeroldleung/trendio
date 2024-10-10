@@ -8,13 +8,6 @@ st.set_page_config(layout="wide")
 
 theme = st.sidebar.text_input("Theme", label_visibility="collapsed")
 
-hot1, hot2, hot3, hot4, hot5 = st.columns(5)
-hot1.write("")
-hot2.metric("热词一", "70#", "1#")
-hot3.metric("热词二", "70$", "-2$")
-hot4.metric("热词三", "70%", "3%")
-hot5.write("")
-
 
 def fetch_data(url, theme, field=None, page=None, order=None):
     param = {
