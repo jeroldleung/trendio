@@ -44,7 +44,7 @@ st.set_page_config(page_title="Trendio", layout="wide")
 st.title("Trendio")
 st.sidebar.header("Configuration")
 
-years, types, subjects = st.tabs(["Years", "Types", "Subjects"])
+years, types, subjects, levels = st.tabs(["Years", "Types", "Subjects", "Levels"])
 
 if theme := st.sidebar.text_input("Theme", placeholder="Search something"):
     yrs = pd.DataFrame.from_dict(filter_articles(FILTER_URL, theme, field="Year"))
@@ -53,3 +53,5 @@ if theme := st.sidebar.text_input("Theme", placeholder="Search something"):
     types.bar_chart(tps, x="name", y="count", x_label="", y_label="", horizontal=True)
     subjs = pd.DataFrame.from_dict(filter_articles(FILTER_URL, theme, field="Subject"))
     subjects.pyplot(wordcloud(subjs, "name", "count"))
+    lvls = pd.DataFrame.from_dict(filter_articles(FILTER_URL, theme, field="Level"))
+    levels.bar_chart(lvls, x="name", y="count", x_label="", y_label="", horizontal=True)
