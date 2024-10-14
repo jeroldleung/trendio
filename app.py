@@ -1,30 +1,29 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+import plotly.express as px
 import requests
 import streamlit as st
 from wordcloud import WordCloud
 
 
-def filter_articles(url, theme, field=None):
-    param = {
-        "searchType": "MulityTermsSearch",
-        "ParamIsNullOrEmpty": "false",
-        "Islegal": "false",
-        "Theme": theme,
-        "ExcludeField": field,
-    }
-    response = requests.post(FILTER_URL, param)
-    res = {
-        "name": [],
-        "count": [],
-        "code": [],
-    }
-    for e in response.json():
-        name, count, code, _ = e.values()
-        res["name"].append(name)
-        res["count"].append(count)
-        res["code"].append(code)
-    return res
+class CnkiService:
+    def __init__(self, request_url):
+        self.url = request_url
+        self.searchType = "MulityTermsSearch"
+        self.ParamIsNullOrEmpty = "false"
+        self.Islegal = "false"
+        self.Theme: str = None
+        self.ExcludeField: str = None
+
+    def set_params(self, theme=None, exclude_field=None):
+        if theme:
+            self.theme = theme
+        if exclude_field:
+            self.ExcludeField = exclude_field
+
+    def fetch(self):
+        response = requests.post(self.url, data=self.__dict__)
+        return response.json()
 
 
 def wordcloud(df, word, count):
@@ -38,20 +37,40 @@ def wordcloud(df, word, count):
     return fig
 
 
-FILTER_URL = "https://search.cnki.com.cn/api/fileterresultapi/articlefileter"
-
 st.set_page_config(page_title="Trendio", layout="wide")
 st.title("Trendio")
-st.sidebar.header("Configuration")
 
-years, types, subjects, levels = st.tabs(["Years", "Types", "Subjects", "Levels"])
+theme = st.text_input("Theme", placeholder="Search Something", label_visibility="collapsed")
 
-if theme := st.sidebar.text_input("Theme", placeholder="Search something"):
-    yrs = pd.DataFrame.from_dict(filter_articles(FILTER_URL, theme, field="Year"))
-    years.line_chart(yrs, x="name", y="count", x_label="", y_label="")
-    tps = pd.DataFrame.from_dict(filter_articles(FILTER_URL, theme, field="Type"))
-    types.bar_chart(tps, x="name", y="count", x_label="", y_label="", horizontal=True)
-    subjs = pd.DataFrame.from_dict(filter_articles(FILTER_URL, theme, field="Subject"))
-    subjects.pyplot(wordcloud(subjs, "name", "count"))
-    lvls = pd.DataFrame.from_dict(filter_articles(FILTER_URL, theme, field="Level"))
-    levels.bar_chart(lvls, x="name", y="count", x_label="", y_label="", horizontal=True)
+article_filter = CnkiService("https://search.cnki.com.cn/api/fileterresultapi/articlefileter")
+article_filter.set_params(theme=theme)
+
+# get and plot the number of articles of each years
+article_filter.set_params(exclude_field="Year")
+years = pd.DataFrame.from_dict(article_filter.fetch())
+fig = px.line(years, x="FilterName", y="ArticleCount")
+fig.update_layout(title_text="Academic Research Index Analysis", yaxis_title=None, xaxis_title=None)
+st.plotly_chart(fig, use_container_width=True)
+
+col1, col2, col3 = st.columns(3)
+
+# get and plot the number of articles of each subjects
+article_filter.set_params(exclude_field="Subject")
+subjects = pd.DataFrame.from_dict(article_filter.fetch())
+fig = px.bar(subjects, x="ArticleCount", y="FilterName", orientation="h")
+fig.update_layout(title_text="Subject Classification", yaxis_title=None, xaxis_title=None)
+col1.plotly_chart(fig, use_container_width=True)
+
+# get and plot the number of articles of each types
+article_filter.set_params(exclude_field="Type")
+types = pd.DataFrame.from_dict(article_filter.fetch())
+fig = px.bar(types, x="FilterName", y="ArticleCount")
+fig.update_layout(title_text="Article Type", yaxis_title=None, xaxis_title=None)
+col2.plotly_chart(fig, use_container_width=True)
+
+# get and plot the number of articles of each levels
+article_filter.set_params(exclude_field="Level")
+levels = pd.DataFrame.from_dict(article_filter.fetch())
+fig = px.bar(levels, x="ArticleCount", y="FilterName", orientation="h")
+fig.update_layout(title_text="Research Level Distribution", yaxis_title=None, xaxis_title=None)
+col3.plotly_chart(fig, use_container_width=True)
