@@ -14,23 +14,25 @@ class CnkiService:
         self.Islegal = "false"
         self.Theme: str = None
         self.ExcludeField: str = None
+        self.Order: str = None
 
-    def set_params(self, theme=None, exclude_field=None):
+    def set_params(self, theme=None, exclude_field=None, order=None):
         if theme:
             self.theme = theme
         if exclude_field:
             self.ExcludeField = exclude_field
+        if order:
+            self.Order = order
 
     def fetch(self):
         response = requests.post(self.url, data=self.__dict__)
         return response.json()
 
 
-def wordcloud(df, word, count):
-    word_freq = dict(zip(df[word], df[count]))
+def wordcloud(text):
     wordcloud = WordCloud(
         font_path="SimHeiBold.ttf", width=1000, height=500, background_color="white"
-    ).generate_from_frequencies(word_freq)
+    ).generate(text)
     fig = plt.figure(figsize=(10, 5))
     plt.imshow(wordcloud, interpolation="bilinear")
     plt.axis("off")  # Hide axes
@@ -74,3 +76,10 @@ levels = pd.DataFrame.from_dict(article_filter.fetch())
 fig = px.bar(levels, x="ArticleCount", y="FilterName", orientation="h")
 fig.update_layout(title_text="Research Level Distribution", yaxis_title=None, xaxis_title=None)
 col3.plotly_chart(fig, use_container_width=True)
+
+paper_list = CnkiService("https://search.cnki.com.cn/api/search/listresult")
+paper_list.set_params(theme=theme)
+paper_list.set_params(order="3")
+papers = pd.DataFrame.from_dict(paper_list.fetch()["articleList"])
+key_word = "".join(papers["keyWord"])
+st.pyplot(wordcloud(key_word))
