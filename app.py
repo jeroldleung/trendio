@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import requests
 import streamlit as st
 from wordcloud import WordCloud
@@ -70,14 +71,19 @@ fig = px.line(years, x="FilterName", y="ArticleCount")
 fig.update_layout(title_text="Academic Research Index Analysis", yaxis_title=None, xaxis_title=None)
 year_col.plotly_chart(fig, use_container_width=True)
 
-subject_col, type_col, level_col = st.columns(3)
+# table of articles
+fig = go.Figure(
+    data=[
+        go.Table(
+            header=dict(values=["Title", "Downloads", "Quotes"]),
+            cells=dict(values=[papers.title, papers.downloadCount, papers.quoteCount]),
+        )
+    ]
+)
+fig.update_layout(title_text="Table of Articles")
+st.plotly_chart(fig, use_container_width=True)
 
-# get and plot the number of articles of each subjects
-article_filter.set_params(exclude_field="Subject")
-subjects = pd.DataFrame.from_dict(article_filter.fetch())
-fig = px.bar(subjects, x="ArticleCount", y="FilterName", orientation="h")
-fig.update_layout(title_text="Subject Classification", yaxis_title=None, xaxis_title=None)
-subject_col.plotly_chart(fig, use_container_width=True)
+type_col, subject_col, level_col = st.columns(3)
 
 # get and plot the number of articles of each types
 article_filter.set_params(exclude_field="Type")
@@ -85,6 +91,13 @@ types = pd.DataFrame.from_dict(article_filter.fetch())
 fig = px.bar(types, x="FilterName", y="ArticleCount")
 fig.update_layout(title_text="Article Type", yaxis_title=None, xaxis_title=None)
 type_col.plotly_chart(fig, use_container_width=True)
+
+# get and plot the number of articles of each subjects
+article_filter.set_params(exclude_field="Subject")
+subjects = pd.DataFrame.from_dict(article_filter.fetch())
+fig = px.bar(subjects, x="ArticleCount", y="FilterName", orientation="h")
+fig.update_layout(title_text="Subject Classification", yaxis_title=None, xaxis_title=None)
+subject_col.plotly_chart(fig, use_container_width=True)
 
 # get and plot the number of articles of each levels
 article_filter.set_params(exclude_field="Level")
