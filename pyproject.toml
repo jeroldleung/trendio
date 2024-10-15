@@ -1,5 +1,7 @@
-[tool.black]
+[tool.ruff]
 line-length = 105
 
-[tool.isort]
-profile = 'black'
+[tool.ruff.lint]
+select = [
+    'I',
+]
