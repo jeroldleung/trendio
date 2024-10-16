@@ -1,3 +1,5 @@
+import asyncio
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
@@ -25,9 +27,9 @@ class CnkiService:
         if order:
             self.Order = order
 
-    def fetch(self):
-        response = requests.post(self.url, data=self.__dict__)
-        return response.json()
+    async def fetch(self):
+        response = requests.post(self.url, data=self.__dict__).json()
+        return response
 
 
 def wordcloud(text):
@@ -60,13 +62,13 @@ wordcloud_col, year_col = st.columns([2, 1])
 
 # get and plot the wordcloud of keywords of most downloaded articles
 paper_list.set_params(order="3")
-papers = pd.DataFrame.from_dict(paper_list.fetch()["articleList"])
+papers = pd.DataFrame.from_dict(asyncio.run(paper_list.fetch())["articleList"])
 key_word = "".join(papers["keyWord"])
 wordcloud_col.pyplot(wordcloud(key_word))
 
 # get and plot the number of articles of each years
 article_filter.set_params(exclude_field="Year")
-years = pd.DataFrame.from_dict(article_filter.fetch())
+years = pd.DataFrame.from_dict(asyncio.run(article_filter.fetch()))
 fig = px.line(years, x="FilterName", y="ArticleCount")
 fig.update_layout(title_text="Academic Research Index Analysis", yaxis_title=None, xaxis_title=None)
 year_col.plotly_chart(fig, use_container_width=True)
@@ -75,8 +77,9 @@ year_col.plotly_chart(fig, use_container_width=True)
 fig = go.Figure(
     data=[
         go.Table(
-            header=dict(values=["Title", "Downloads", "Quotes"]),
-            cells=dict(values=[papers.title, papers.downloadCount, papers.quoteCount]),
+            columnwidth=[400, 80],
+            header=dict(values=["Title", "Downloads"]),
+            cells=dict(values=[papers.title, papers.downloadCount]),
         )
     ]
 )
@@ -87,21 +90,21 @@ type_col, subject_col, level_col = st.columns(3)
 
 # get and plot the number of articles of each types
 article_filter.set_params(exclude_field="Type")
-types = pd.DataFrame.from_dict(article_filter.fetch())
+types = pd.DataFrame.from_dict(asyncio.run(article_filter.fetch()))
 fig = px.bar(types, x="FilterName", y="ArticleCount")
 fig.update_layout(title_text="Article Type", yaxis_title=None, xaxis_title=None)
 type_col.plotly_chart(fig, use_container_width=True)
 
 # get and plot the number of articles of each subjects
 article_filter.set_params(exclude_field="Subject")
-subjects = pd.DataFrame.from_dict(article_filter.fetch())
+subjects = pd.DataFrame.from_dict(asyncio.run(article_filter.fetch()))
 fig = px.bar(subjects, x="ArticleCount", y="FilterName", orientation="h")
 fig.update_layout(title_text="Subject Classification", yaxis_title=None, xaxis_title=None)
 subject_col.plotly_chart(fig, use_container_width=True)
 
 # get and plot the number of articles of each levels
 article_filter.set_params(exclude_field="Level")
-levels = pd.DataFrame.from_dict(article_filter.fetch())
+levels = pd.DataFrame.from_dict(asyncio.run(article_filter.fetch()))
 fig = px.bar(levels, x="ArticleCount", y="FilterName", orientation="h")
 fig.update_layout(title_text="Research Level Distribution", yaxis_title=None, xaxis_title=None)
 level_col.plotly_chart(fig, use_container_width=True)
